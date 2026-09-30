@@ -9,6 +9,9 @@ $legacyRepository = is_array( $legacySettings ) && is_string( $legacySettings['g
 
 $markerDirectories    = array( __DIR__ . '/runtime' );
 $markerRemovalFailed = false;
+if ( defined( 'HIDE_WP_MARKER_DIR' ) && is_string( HIDE_WP_MARKER_DIR ) && '' !== HIDE_WP_MARKER_DIR ) {
+	$markerDirectories[] = rtrim( str_replace( '\\', '/', HIDE_WP_MARKER_DIR ), '/' );
+}
 if ( defined( 'WP_CONTENT_DIR' ) && is_string( WP_CONTENT_DIR ) && '' !== WP_CONTENT_DIR ) {
 	$markerDirectories[] = rtrim( str_replace( '\\', '/', WP_CONTENT_DIR ), '/' ) . '/hide-wp-surface-runtime';
 }

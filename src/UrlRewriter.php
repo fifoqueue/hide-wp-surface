@@ -128,10 +128,14 @@ final readonly class UrlRewriter {
 	}
 
 	/**
-	 * @param array<int|string, array<string, mixed>> $sources Responsive image sources.
-	 * @return array<int|string, array<string, mixed>>
+	 * @param array<int|string, array<string, mixed>>|false $sources Responsive image sources, or disabled by another filter.
+	 * @return array<int|string, array<string, mixed>>|false
 	 */
-	public function rewriteSrcsetSources( array $sources, mixed ...$unused ): array {
+	public function rewriteSrcsetSources( array|false $sources, mixed ...$unused ): array|false {
+		if ( false === $sources ) {
+			return false;
+		}
+
 		foreach ( $sources as &$source ) {
 			if ( isset( $source['url'] ) && is_string( $source['url'] ) ) {
 				$source['url'] = $this->mapper->rewriteUrl( $source['url'] );

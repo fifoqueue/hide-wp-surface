@@ -123,6 +123,12 @@ jobs:
             -path './dist' -prune -o \
             -name '*.php' -print0 | xargs -0 -n 1 php -l
 
+      - name: Run compatibility regression checks
+        run: |
+          php tests/regression.php
+          php tests/regression.php uninstall
+          php tests/regression.php unsupported
+
       - name: Stamp GitHub repository metadata
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         shell: bash
@@ -189,6 +195,7 @@ jobs:
           rsync -a ./ "build/${PLUGIN_DIR}/" \
             --exclude '.git/' \
             --exclude '.github/' \
+            --exclude 'tests/' \
             --exclude 'build/' \
             --exclude 'dist/' \
             --exclude '.gitignore' \

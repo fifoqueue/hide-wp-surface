@@ -25,7 +25,9 @@ final readonly class PathMapper {
 			return $url;
 		}
 
-		$position = strpos( $url, $path );
+		// Search after the authority; a hostname can also contain the source path.
+		preg_match( '~\A(?:https?:)?//[^/?#]*~i', $url, $authority );
+		$position = strpos( $url, $path, strlen( $authority[0] ?? '' ) );
 		if ( false === $position ) {
 			return $url;
 		}
@@ -165,7 +167,6 @@ final readonly class PathMapper {
 		}
 
 		$host = strtolower( (string) $parts['host'] );
-		$port = $this->urlPort( $parts );
 
 		foreach (
 			array(
@@ -186,7 +187,7 @@ final readonly class PathMapper {
 			}
 
 			$allowedPort = $this->urlPort( $allowed );
-			if ( 0 === $port || $allowedPort === $port ) {
+			if ( $allowedPort === $this->urlPort( $parts + array( 'scheme' => $allowedScheme ) ) ) {
 				return true;
 			}
 		}

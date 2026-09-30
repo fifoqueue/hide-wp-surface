@@ -36,8 +36,16 @@ add_action(
 if ( PHP_VERSION_ID < 80300 || version_compare( (string) ( $GLOBALS['wp_version'] ?? '0' ), '7.0', '<' ) ) {
 	$markerRemovalFailed = false;
 	$markerDirectories    = array( __DIR__ . '/runtime' );
+	if ( defined( 'HIDE_WP_MARKER_DIR' ) && is_string( HIDE_WP_MARKER_DIR ) && '' !== HIDE_WP_MARKER_DIR ) {
+		$markerDirectories[] = rtrim( str_replace( '\\', '/', HIDE_WP_MARKER_DIR ), '/' );
+	}
 	if ( defined( 'WP_CONTENT_DIR' ) && is_string( WP_CONTENT_DIR ) && '' !== WP_CONTENT_DIR ) {
 		$markerDirectories[] = rtrim( str_replace( '\\', '/', WP_CONTENT_DIR ), '/' ) . '/hide-wp-surface-runtime';
+	}
+	if ( defined( 'WP_PLUGIN_DIR' ) && is_string( WP_PLUGIN_DIR ) && '' !== WP_PLUGIN_DIR ) {
+		$pluginDirectory = rtrim( str_replace( '\\', '/', WP_PLUGIN_DIR ), '/' );
+		$markerDirectories[] = $pluginDirectory . '/hide-wp-surface/runtime';
+		$markerDirectories[] = $pluginDirectory . '/hide-wp-master/runtime';
 	}
 	foreach ( array_unique( $markerDirectories ) as $markerDirectory ) {
 		if ( is_link( $markerDirectory ) ) {

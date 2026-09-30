@@ -37,7 +37,7 @@ msgstr "검증된 서버 측 별칭을 사용하여 노출되는 WordPress 경�
 msgid "fifoqueue"
 msgstr "fifoqueue"
 
-#: hide-wp.php:83
+#: hide-wp.php:91
 msgid "Hide WP Surface requires WordPress 7.0 or later and PHP 8.3 or later."
 msgstr "Hide WP Surface를 사용하려면 WordPress 7.0 이상과 PHP 8.3 이상이 필요합니다."
 

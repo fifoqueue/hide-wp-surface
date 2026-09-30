@@ -37,7 +37,7 @@ msgstr ""
 msgid "fifoqueue"
 msgstr ""
 
-#: hide-wp.php:83
+#: hide-wp.php:91
 msgid "Hide WP Surface requires WordPress 7.0 or later and PHP 8.3 or later."
 msgstr ""
 
