@@ -12,6 +12,7 @@ final readonly class UrlRewriter {
 
 	public function boot(): void {
 		$this->disableAdminAssetConcatenation();
+		add_action( 'wp_before_admin_bar_render', array( $this, 'rewriteAdminBarUrls' ), PHP_INT_MAX );
 
 		foreach (
 			array(
@@ -55,6 +56,25 @@ final readonly class UrlRewriter {
 	private function disableAdminAssetConcatenation(): void {
 		if ( in_array( 'admin', $this->mapper->activeAliasTypes(), true ) ) {
 			$GLOBALS['concatenate_scripts'] = false;
+		}
+	}
+
+	public function rewriteAdminBarUrls(): void {
+		global $wp_admin_bar;
+
+		if ( ! $wp_admin_bar instanceof \WP_Admin_Bar ) {
+			return;
+		}
+
+		foreach ( $wp_admin_bar->get_nodes() ?? array() as $node ) {
+			if ( ! is_string( $node->href ) ) {
+				continue;
+			}
+
+			$url = $this->mapper->rewriteUrl( $node->href );
+			if ( $url !== $node->href ) {
+				$wp_admin_bar->add_node( array( 'id' => $node->id, 'href' => $url ) );
+			}
 		}
 	}
 

@@ -33,7 +33,20 @@ function delete_site_transient( string $key ): bool { return true; }
 function wp_parse_url( string $url, int $component = -1 ): mixed { return parse_url( $url, $component ); }
 function wp_json_encode( mixed $value ): string|false { return json_encode( $value ); }
 function is_multisite(): bool { return false; }
-function add_action( mixed ...$args ): void {}
+function add_action( mixed ...$args ): void { $GLOBALS['actions'][ $args[0] ] = $args; }
+function add_filter( mixed ...$args ): void {}
+function wp_parse_args( array $args, array $defaults = array() ): array { return array_merge( $defaults, $args ); }
+if ( ! class_exists( 'WP_Admin_Bar' ) ) {
+	class WP_Admin_Bar {
+		private array $nodes = array();
+		public function get_nodes(): array { return $this->nodes; }
+		public function get_node( string $id ): ?object { return $this->nodes[ $id ] ?? null; }
+		public function add_node( array $args ): void {
+			$current = isset( $this->nodes[ $args['id'] ] ) ? get_object_vars( $this->nodes[ $args['id'] ] ) : array();
+			$this->nodes[ $args['id'] ] = (object) array_merge( $current, $args );
+		}
+	}
+}
 function plugin_basename( string $file ): string { return 'hide-wp-surface/' . basename( $file ); }
 function plugin_dir_path( string $file ): string { return dirname( $file ) . '/'; }
 function plugin_dir_url( string $file ): string { return 'https://example.test/wp-content/plugins/hide-wp-surface/'; }
@@ -108,6 +121,27 @@ try {
 		$expected = $source;
 		$expected[640]['url'] = 'https://example.test/assets/a.jpg';
 		check( $rewriter->rewriteSrcsetSources( $source ) === $expected, 'active srcset rewrites URL, preserves metadata' );
+		$GLOBALS['wp_admin_bar'] = new WP_Admin_Bar();
+		$query = '?page=rvg-optimize-database&action=run_detail&_wpnonce=test-nonce';
+		$node = array( 'id' => 'optimize', 'title' => 'Optimize DB', 'parent' => 'tools', 'meta' => array( 'class' => 'optimize-link' ), 'href' => 'https://example.test/wp-admin/tools.php' . $query );
+		$GLOBALS['wp_admin_bar']->add_node( $node );
+		$GLOBALS['wp_admin_bar']->add_node( array( 'id' => 'external', 'title' => 'External', 'href' => 'https://external.test/wp-admin/tools.php' ) );
+		$GLOBALS['wp_admin_bar']->add_node( array( 'id' => 'group', 'title' => 'Tools', 'href' => false ) );
+		$rewriter->boot();
+		check( PHP_INT_MAX === $GLOBALS['actions']['wp_before_admin_bar_render'][2], 'admin bar hook runs after plugin menu changes' );
+		$originalNode = get_object_vars( $GLOBALS['wp_admin_bar']->get_node( 'optimize' ) );
+		$expectedNode = $originalNode;
+		$expectedNode['href'] = 'https://example.test/control/tools.php' . $query;
+		( $GLOBALS['actions']['wp_before_admin_bar_render'][1] )();
+		check( get_object_vars( $GLOBALS['wp_admin_bar']->get_node( 'optimize' ) ) === $expectedNode, 'admin bar rewrites hard-coded URL, preserving query and node metadata' );
+		check( $GLOBALS['wp_admin_bar']->get_node( 'external' )->href === 'https://external.test/wp-admin/tools.php', 'admin bar preserves external URLs' );
+		check( false === $GLOBALS['wp_admin_bar']->get_node( 'group' )->href, 'admin bar preserves nodes without links' );
+		$GLOBALS['wp_admin_bar']->add_node( $node );
+		HideWp\Marker::disable();
+		$rewriter->rewriteAdminBarUrls();
+		check( $GLOBALS['wp_admin_bar']->get_node( 'optimize' )->href === $node['href'], 'admin bar preserves original URLs while aliases are disabled' );
+		unset( $GLOBALS['wp_admin_bar'] );
+		$rewriter->rewriteAdminBarUrls();
 	}
 } finally {
 	// Only remove fixtures created in this unique test directory.
@@ -121,5 +155,5 @@ try {
 	rmdir( $root );
 }
 
-if ( 0 === $failures ) { echo 'PASS: ' . ( '' === $mode ? 'URLs and image filters' : $mode . ' marker cleanup' ) . PHP_EOL; }
+if ( 0 === $failures ) { echo 'PASS: ' . ( in_array( $mode, array( 'uninstall', 'unsupported' ), true ) ? $mode . ' marker cleanup' : 'URLs, image filters and admin bar' ) . PHP_EOL; }
 exit( 0 === $failures ? 0 : 1 );
